@@ -1,7 +1,8 @@
-# import random
+import random
 from mpyc.runtime import mpc
 
-secint = mpc.SecInt(31)  # Mersenne prime (2^31 - 1)
+# secint = mpc.SecInt(31)  # Mersenne prime (2^31 - 1) [Does not work with large (> 2^60) integers]
+secint = mpc.SecInt(257)
 
 async def main():
   await mpc.start()
@@ -9,8 +10,8 @@ async def main():
   def shamir_split(secret, threshold, n):
     """Split secret using Shamir's Secret Sharing into n shares with threshold."""
     # Generate random coefficients for a polynomial of degree `threshold - 1`
-    # coeffs = [secret] + [random.randint(0, secint.field.modulus - 1) for _ in range(threshold - 1)]
-    coeffs = [secret] + [mpc.random.randint(secint, 0, secint.field.modulus - 1) for _ in range(threshold - 1)]
+    coeffs = [secret] + [random.randint(0, secint.field.modulus - 1) for _ in range(threshold - 1)]
+    # coeffs = [secret] + [mpc.random.randint(secint, 0, secint.field.modulus - 1) for _ in range(threshold - 1)]
 
     shares = []
     for i in range(1, n + 1):  # i is the party ID or index
@@ -32,8 +33,15 @@ async def main():
       secret += shares[i] * lagrange_coeff
     return secret
 
+  # secret_int = 12345
+  # secret_hex = '47f047f047f047f' # 60 bits
+  # secret_hex = '47f047f047f047f2' # 64 bits
+  secret_hex = '47f047f047f047f047f047f047f047f047f047f047f047f047f047f047f047f0' # 256 bits (32 bytes)
+  secret_int = int(secret_hex, 16)
+  print('-->', secret_int)
+
   # Parameters
-  secret = secint(-12345576578)   # Secret to be shared
+  secret = secint(secret_int)   # Secret to be shared
   threshold = 2            # Minimum number of shares required for reconstruction
   n_parties = 3            # Total number of parties
 
@@ -51,7 +59,7 @@ async def main():
 
   # Output the reconstructed secret
   reconstructed_secret = await mpc.output(reconstructed_secret)
-  print(reconstructed_secret)
+  print('==>', reconstructed_secret)
 
   await mpc.shutdown()
 
