@@ -17,7 +17,7 @@
 ## Roadmap
 
 ```
-[private keys]
+[private keys + public/private key pairs]
  1 trusted party
  3 storage parties
 
@@ -29,10 +29,10 @@
  user completes MFA w/ trusted party on site
 
 setup shamir secret: (2/3)
- create a "secure" random key
- split the key into 3 shares
- reveal a key share to the "specific" party only
- a storage party stores the encrypted version of its share in its smart contract
+ [*] create a "secure" random key
+ [*] split the key into 3 shares
+ [*] reveal a key share to the "specific" party only
+ [ ] a storage party stores the encrypted version of its share in its smart contract
 
 encrypt:
  trusted party gets user input as plaintext

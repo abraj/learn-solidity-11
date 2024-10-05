@@ -1,4 +1,5 @@
 from mpyc.runtime import mpc
+from utils.mpc_utils import get_nbit_rand
 
 # secint = mpc.SecInt(31)  # Mersenne prime (2^31 - 1) [Does not work with large (> 2^60) integers]
 secint = mpc.SecInt(257)
@@ -6,12 +7,8 @@ secint = mpc.SecInt(257)
 def shamir_split(secret, threshold, n):
   """Split secret using Shamir's Secret Sharing into n shares with threshold."""
 
-  # NOTE: Don't use (secint.field.modulus - 1) here since modulus is large for SecInt(257)
-  # MAX_RAND_VALUE = 2**32 - 1
-  MAX_RAND_VALUE = 2**30 - 1
-
   # Generate random coefficients for a polynomial of degree `threshold - 1`
-  coeffs = [secret] + [mpc.random.randint(secint, 0, MAX_RAND_VALUE) for _ in range(threshold - 1)]
+  coeffs = [secret] + [get_nbit_rand(secint, 256) for _ in range(threshold - 1)]
 
   shares = []
   for i in range(1, n + 1):  # i is the party ID or index
