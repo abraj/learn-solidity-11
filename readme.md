@@ -9,6 +9,7 @@
 ## MPyC
 
 - https://github.com/lschoe/mpyc
+- https://chatgpt.com/c/670160d9-2bdc-8006-9f02-c560ee7ef303
 - https://mpyc.readthedocs.io/en/latest/mpyc.html
 - https://mpyc.readthedocs.io/en/latest/demos.html
 - https://www.youtube.com/watch?v=bSC4rCHbLlc
@@ -37,7 +38,7 @@ setup shamir secret: (2/3)
 encrypt:
  trusted party gets user input as plaintext
  get plaintext as "secure" input (from trusted party)
- get keys shares from all 3 parties as "hex string" input
+ get keys shares from all 3 parties as "hex string" secure input
  pick 2 shares from them at random
  reconstruct the key from the 2 shares
  output: ciphertext
