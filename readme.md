@@ -15,6 +15,10 @@
 - https://www.youtube.com/watch?v=bSC4rCHbLlc
 - https://pure.tue.nl/ws/portalfiles/portal/333714970/Gils_N.pdf
 
+## Online tools
+
+- https://emn178.github.io/online-tools/sha3_256.html
+
 ## Roadmap
 
 ```
