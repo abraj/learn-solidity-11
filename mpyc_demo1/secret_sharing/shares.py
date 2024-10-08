@@ -102,24 +102,22 @@ async def get_hex_commitment(dec_val):
   # Compute sha3-256 hash
   hash = await sha3_256_hash_bits(x)
 
-  return (hex_ascii_array, hash)
+  return hash
 
 async def create_shares():
   secret = get_nbit_rand(secint, 8 * KEY_SIZE)
   shares = shamir_split(secret, threshold, n_parties)
 
   # get hex hash commitments
-  share_hex_ascii_array = []
   commitments = []
   for share in shares:
-    (share_hex_arr, hash) = await get_hex_commitment(share)
-    share_hex_ascii_array.append(share_hex_arr)
+    hash = await get_hex_commitment(share)
     commitments.append(hash)
 
   if (len(commitments) != len(shares)):
     raise Exception(f'[Unexpected] {len(commitments)} {len(shares)}')
 
-  return (share_hex_ascii_array, commitments)
+  return (shares, commitments)
 
 async def reconstruct_secret(shares, commitments):
   random_numbers = mpc.random.sample(mpc.SecInt(8), range(n_parties), threshold)
@@ -138,6 +136,8 @@ async def main():
     print('[ERROR] Script requires 4 parties!')
     sys.exit(1)
 
+  # -----------------------------
+
   # create secret shares
   (shares, commitments) = await create_shares()
 
@@ -150,19 +150,41 @@ async def main():
 
   secret_share = outputs[mpc.pid]
   if (secret_share is not None):
-    secret_share = ''.join([chr(b) for b in secret_share])
-  print('secret_share:', secret_share)
+    secret_share = hex(secret_share)[2:]
+  print('\nsecret_share:', secret_share)
 
   if mpc.pid == 0:
     print('commitments:', np.array(commitments))
   else:
     print('commitment:', commitments[mpc.pid-1])
+  
+  # -----------------------------
 
-  # # reconstruct secret
-  # reconstructed_secret = await reconstruct_secret(shares, commitments)
-  # secret = await mpc.output(reconstructed_secret, receivers=0)
-  # # ideally, there should be no receivers, i.e. secret is never in plain
-  # print('secret:', hex(secret)[2:] if secret else None)
+  secret_share = 0
+  commitment1 = 0
+  commitment2 = 0
+  commitment3 = 0
+
+  if (mpc.pid == 0):
+    commitment1 = int(input('\ncommitment [1]: '), 16)
+    commitment2 = int(input('commitment [2]: '), 16)
+    commitment3 = int(input('commitment [3]: '), 16)
+  else:
+    secret_share = int(input('\nsecret_share: '), 16)
+
+  shares = mpc.input(secint(secret_share), senders=[1,2,3])
+  commitments = mpc.input([secint(commitment1), secint(commitment2), secint(commitment3)], senders=0)
+
+  # TODO: verify hex hash commitments
+
+  # reconstruct secret
+  reconstructed_secret = await reconstruct_secret(shares, commitments)
+
+  # ideally, there should be no receivers, i.e. secret is never in plain
+  secret = await mpc.output(reconstructed_secret, receivers=0)
+  print('\nsecret:', hex(secret)[2:] if secret else None)
+
+  # -----------------------------
 
   await mpc.shutdown()
 
