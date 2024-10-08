@@ -4,6 +4,7 @@
 
 ## MPC libraries
 
+- https://github.com/MPC-SoK/frameworks/wiki
 - https://chatgpt.com/c/66fc8557-ac9c-8006-816b-d45a94c7ae07
 
 ## MPyC

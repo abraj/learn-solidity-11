@@ -158,21 +158,23 @@ async def xprint(text, s):
     return s
 
 
-async def sha3_256_hash(inp_str):
-    # Ref: https://emn178.github.io/online-tools/sha3_256.html
+async def sha3_256_hash_bits(x):
     d = 256  # output (bits)
     c = 512  # capacity of SHA3 (2 * d)
-
-    X = inp_str.encode()  # convert to bytes
-    x = np.array([(b >> i) & 1 for b in X for i in range(8)])  # bytes to bits
-    x = secfld.array(x)  # secret-shared input bits
-    s = sha3(x, d, c)  # secret-shared output bits
-
-    s = await mpc.output(s)
+    s1 = sha3(x, d, c)  # secret-shared output bits
+    s = await mpc.output(s1)
     s = np.fliplr(s.reshape(-1, 8)).reshape(-1)  # reverse bits for each byte
     d = len(s)
     s = f'{int("".join(str(int(b)) for b in s), 2):0{d//4}x}'  # bits to hex digits with leading 0s
     return s
+
+async def sha3_256_hash(inp_str):
+    # Ref: https://emn178.github.io/online-tools/sha3_256.html
+    X = inp_str.encode()  # convert to bytes
+    x = np.array([(b >> i) & 1 for b in X for i in range(8)])  # bytes to bits
+    x = secfld.array(x)  # secret-shared input bits
+    hash = await sha3_256_hash_bits(x)
+    return hash
 
 
 async def main():
