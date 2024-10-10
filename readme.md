@@ -1,10 +1,15 @@
 ## MPC: Multi-party computation
 
+- https://yehudalindell.com/resources-for-getting-started-with-mpc/
+- https://www.cse.iitb.ac.in/%7Emp/crypto/mpc2017/
 - https://sands.edpsciences.org/articles/sands/full_html/2022/01/sands20210001/sands20210001.html
 
 ## MPC libraries
 
+- https://github.com/rdragos/awesome-mpc
+- https://github.com/MPC-SoK/frameworks/tree/master
 - https://github.com/MPC-SoK/frameworks/wiki
+- https://www.youtube.com/watch?v=I0bremwQ_ns
 - https://chatgpt.com/c/66fc8557-ac9c-8006-816b-d45a94c7ae07
 
 ## MPyC

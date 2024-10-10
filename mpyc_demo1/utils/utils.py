@@ -1,4 +1,5 @@
 import numpy as np
+from utils.mpc_utils import convert_to_sec_bytes
 
 def pad_str(str):
   """
@@ -116,15 +117,17 @@ def unpadhex_str(hex_str):
   padded_text = str_from_hex(hex_str)
   return unpad_str(padded_text)
 
-def create_matrix(bytes_array):
-  matrix = np.zeros((4, 4), dtype=np.uint8)
-  for i in range(4):
-    for j in range(4):
-      index = i + j * 4
+def create_matrix(bytes_array, nRows=4, nCols=4, dtype=np.uint8):
+  n = nRows
+  m = nCols
+  matrix = np.zeros((n, m), dtype)
+  for i in range(n):
+    for j in range(m):
+      index = i + j * n
       if index < len(bytes_array):
         matrix[i][j] = bytes_array[index]
       else:
-        matrix[i][j] = 0  # Fill with zero if no more data
+        matrix[i][j] = dtype(0)  # Fill with zero if no more data
   return matrix
 
 def prepare_for_aes(plaintext):
@@ -132,6 +135,12 @@ def prepare_for_aes(plaintext):
   bytes_array = str_to_bytes(padded_text)
   block_data = create_matrix(bytes_array)
   return block_data
+
+def prepare_aes_key(dec_key):
+  sec_bytes = convert_to_sec_bytes(dec_key)
+  sec_bytes.pop(0)  # remove leading 0 (len 33 to len 32)
+  secret_block_32bytes = create_matrix(sec_bytes, 4, 8, dtype=object)
+  return secret_block_32bytes
 
 # Example usage:
 # plaintext = ""
