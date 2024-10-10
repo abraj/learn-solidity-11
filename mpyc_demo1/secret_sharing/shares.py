@@ -3,7 +3,7 @@ import numpy as np
 from mpyc.runtime import mpc
 from mpyc.seclists import seclist
 from secret_sharing.shamir import shamir_split, shamir_reconstruct
-from utils.mpc_utils import get_nbit_rand
+from utils.mpc_utils import get_nbit_rand, convert_to_hex_ascii
 from hashing.sha3_plus import sha3_256_hash_bits
 
 KEY_SIZE = 32  # 32 bytes (256 bits)
@@ -14,68 +14,26 @@ secfld1 = mpc.SecFld(2)
 threshold = 2  # Minimum number of shares required for reconstruction
 n_parties = 3  # Total number of parties
 
-def get_ascii_code(c):
-  code = mpc.if_else(mpc.eq(c, 10), 97, 
-      mpc.if_else(mpc.eq(c, 11), 98, 
-      mpc.if_else(mpc.eq(c, 12), 99, 
-      mpc.if_else(mpc.eq(c, 13), 100, 
-      mpc.if_else(mpc.eq(c, 14), 101, 
-      mpc.if_else(mpc.eq(c, 15), 102, 
-      mpc.if_else(mpc.eq(c, 0), 48, 
-      mpc.if_else(mpc.eq(c, 1), 49, 
-      mpc.if_else(mpc.eq(c, 2), 50, 
-      mpc.if_else(mpc.eq(c, 3), 51, 
-      mpc.if_else(mpc.eq(c, 4), 52, 
-      mpc.if_else(mpc.eq(c, 5), 53, 
-      mpc.if_else(mpc.eq(c, 6), 54, 
-      mpc.if_else(mpc.eq(c, 7), 55, 
-      mpc.if_else(mpc.eq(c, 8), 56, 
-      mpc.if_else(mpc.eq(c, 9), 57, 0))))))))))))))))
-  return code
-
 async def get_hex_commitment(sec_dec):
   secintType = secint16
 
-  # Get the number of bytes needed for the shared integer
-  num_bytes = (sec_dec.bit_length + 7) // 8
+  # Convert shared integer to its hexadecimal ASCII representation (as bytes)
+  hex_ascii_array = convert_to_hex_ascii(sec_dec, secintType)
 
-  # NOTE: the following does not work for smaller `secintType`s like SecInt16, etc.
-  # hex_bytes = [mpc.and_(mpc.convert(sec_dec >> (8 * i), secintType), secintType(0xFF)) for i in range(num_bytes)]
-
-  # Convert shared integer to its hexadecimal representation (as bytes)
-  base = sec_dec
-  hex_bytes = []
-  for _ in range(num_bytes):
-    item = mpc.convert(base % 2**8, secintType)
-    base = base // 2**8
-    hex_bytes.append(item)
-
-  # Convert each byte to hexadecimal and then to ASCII values
-  hex_ascii_array = []
-  for byte in hex_bytes:
-    a = byte // 16
-    b = byte % 16
-    a = get_ascii_code(a)
-    b = get_ascii_code(b)
-    hex_ascii_array.extend([b, a])
-
-  hex_ascii_array = hex_ascii_array[::-1]
-
-  # remove leading 0s
+  # remove all leading 0s
   while await mpc.eq_public(hex_ascii_array[0], 48):
     hex_ascii_array.pop(0)
 
+  hex_ascii_array = mpc.np_fromlist(hex_ascii_array)
+
   # Convert hex ASCII array to bits
   bits_array = []
-  # for b in seclist(hex_ascii_array, secint16):
   for b in seclist(hex_ascii_array, secintType):
-    for _ in range(8):
+    for _ in range(8):  # expand each hex ascii code into a byte (8 bits)
       v = b % 2
       b = b // 2
       bits_array.append(v)
   bits_array = mpc.np_fromlist(bits_array)
-
-  hex_ascii_array = mpc.np_fromlist(hex_ascii_array)
 
   # NOTE: Does not work!
   # bits_array = [mpc.convert(s, secfld1) for s in bits_array]
@@ -217,10 +175,10 @@ async def main():
   verified_shares = await verify_shares(shares, commitments)
 
   # reconstruct secret
-  reconstructed_secret = await reconstruct_secret(verified_shares)
+  secret = await reconstruct_secret(verified_shares)
 
   # ideally, there should be no receivers, i.e. secret is never in plain
-  secret = await mpc.output(reconstructed_secret, receivers=0)
+  secret = await mpc.output(secret, receivers=0)
   print('\nsecret:', hex(secret)[2:] if secret else None)
 
   # -----------------------------
