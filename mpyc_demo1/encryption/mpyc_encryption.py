@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 from mpyc.runtime import mpc
-from utils.utils import prepare_for_aes, prepare_aes_key, str_from_bytes
+from utils.utils import prepare_for_aes, prepare_aes_key, str_from_bytes, unpad_str
 from secret_sharing.shares import reconstruct_secret, verify_shares
 from encryption.np_aes_plus import aes_256_encrypyt, aes_256_decrypyt
 
@@ -19,8 +19,10 @@ async def xprint2(text, s):
     """Print matrix s transposed and flattened as hex string."""
     s = list(map(list, zip(*s)))
     s = await mpc.output(sum(s, []))
-    t = list(map(int, s))
-    print(f'{text} {str_from_bytes(t)}')
+    s = list(map(int, s))
+    s = str_from_bytes(s)
+    s = unpad_str(s)
+    print(f'{text} {s}')
 
 async def main():
   await mpc.start()
