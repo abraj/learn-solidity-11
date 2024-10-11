@@ -13,6 +13,7 @@ done by using GF(2) as a subfield of GF(2^8).
 
 import sys
 from mpyc.runtime import mpc
+from utils.mpc_utils import matrix_xor, mpc_pack
 
 secfld = mpc.SecFld(2**8)  # Secure AES field GF(2^8) for secret values.
 f256 = secfld.field        # Plain AES field GF(2^8) for public values.
@@ -99,32 +100,47 @@ async def xprint(text, s):
     print(f'{text} {bytes(map(int, s)).hex()}')
 
 
-def aes_256_encrypyt(key, p):
+def aes_256_encrypyt(key, iv, p):
     K = key_expansion(key)
-    c = encrypt(K, p)
-    return c
+    cl = []
+    c = iv
+    for i in range(len(p)):
+        x = matrix_xor(p[i], c)
+        c = encrypt(K, x)
+        cl.append(c)
+    return mpc_pack(cl)
 
-def aes_256_decrypyt(key, c):
+def aes_256_decrypyt(key, iv, c):
     K = key_expansion(key)
-    p = decrypt(K, c)
-    return p
+    pl = []
+    v = iv
+    for i in range(len(c)):
+        p = decrypt(K, c[i])
+        x = matrix_xor(p, v)
+        pl.append(x)
+        v = c[i]
+    return mpc_pack(pl)
 
 async def demo():
     await mpc.start()
 
     s = [[(17 * (4*j + i)) for j in range(4)] for i in range(4)]
-    s = secfld.array(f256.array(s))
-    await xprint('Plaintext:  ', s)
+    s = secfld.array(f256.array([s]))  # list w/ single data block; dimension: (1, 4, 4)
+    await xprint('Plaintext:  ', s[0])
 
     k256 = [[(4*j + i) for j in range(8)] for i in range(4)]
     k256 = secfld.array(f256.array(k256))
     await xprint('AES-256 key:', k256)
 
-    c = aes_256_encrypyt(k256, s)
-    await xprint('Ciphertext: ', c)
+    iv = [[(4*j + i) for j in range(4)] for i in range(4)]
+    iv = secfld.array(f256.array(iv))
+    await xprint('AES-256 IV :', iv)
 
-    p = aes_256_decrypyt(k256, c)
-    await xprint('Plaintext:  ', p)
+    c = aes_256_encrypyt(k256, iv, s)
+    await xprint('Ciphertext: ', c[0])
+
+    p = aes_256_decrypyt(k256, iv, c)
+    await xprint('Plaintext:  ', p[0])
 
     await mpc.shutdown()
 

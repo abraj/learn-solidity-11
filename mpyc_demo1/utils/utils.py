@@ -1,5 +1,4 @@
 import numpy as np
-from utils.mpc_utils import convert_to_sec_bytes
 
 def pad_str(str):
   """
@@ -63,6 +62,8 @@ def hex_to_bytes(hex_str):
   Converts a hex string to bytes array
     hex_to_bytes('48656c6c6f') == [72, 101, 108, 108, 111]
   """
+  if (len(hex_str) % 2 != 0):
+    raise Exception(f'Cannot convert hex string to bytes: ({len(hex_str)}) {hex_str}')
   bytearray_obj = bytearray.fromhex(hex_str)
   bytes_array = [byte for byte in bytearray_obj]
   return bytes_array
@@ -133,14 +134,13 @@ def create_matrix(bytes_array, nRows=4, nCols=4, dtype=np.uint8):
 def prepare_for_aes(plaintext):
   padded_text = pad_str(plaintext)
   bytes_array = str_to_bytes(padded_text)
-  block_data = create_matrix(bytes_array)
-  return block_data
-
-def prepare_aes_key(dec_key):
-  sec_bytes = convert_to_sec_bytes(dec_key)
-  sec_bytes.pop(0)  # remove leading 0 (len 33 to len 32)
-  secret_block_32bytes = create_matrix(sec_bytes, 4, 8, dtype=object)
-  return secret_block_32bytes
+  block_data = []
+  num_blocks = len(bytes_array) // 16
+  bytes_blocks = np.array(bytes_array).reshape((num_blocks, 16))
+  for i in range(num_blocks):
+    block_item = create_matrix(bytes_blocks[i])
+    block_data.append(block_item)
+  return np.array(block_data)
 
 # Example usage:
 # plaintext = ""

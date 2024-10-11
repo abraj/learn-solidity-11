@@ -1,15 +1,28 @@
 import secrets
 import numpy as np
 from mpyc.runtime import mpc
+from utils.utils import create_matrix, hex_to_bytes
 
+secint = mpc.SecInt(257)
 secint16 = mpc.SecInt(16)
 
+# NOTE: The returned secure int fits in 'at max' num_bits
+# But, the actual #bits needed to hold the secure int might be 'less than' num_bits
 def get_nbit_rand(secintType, num_bits):
+  """Get a secure random int with 'maximum' #bits=num_bits"""
   rand = secintType(0)
   rand_bits = mpc.random_bits(mpc.SecInt(8), num_bits)
   for i, digit in enumerate(rand_bits[::-1]):
     rand += mpc.convert(digit, secintType) << i
   return rand
+
+async def random_bytes(num_bytes):
+  """Get an array of bytes (as int) of length num_bytes"""
+  sec_rand_dec = get_nbit_rand(secint, 8 * num_bytes)
+  rand_dec = await mpc.output(sec_rand_dec)
+  padded_rand_hex = (hex(rand_dec)[2:]).zfill(num_bytes * 2)
+  rand_bytes = hex_to_bytes(padded_rand_hex)
+  return rand_bytes
 
 def get_ascii_code(c):
   code = mpc.if_else(mpc.eq(c, 10), 97, 
@@ -49,6 +62,14 @@ def convert_to_sec_bytes(sec_dec, secintType=secint16):
 
   return sec_bytes
 
+def prepare_aes_key(dec_key):
+  sec_bytes = convert_to_sec_bytes(dec_key)
+  sec_bytes.pop(0)  # remove leading 0 (len 33 to len 32)
+  if (len(sec_bytes) != 32):
+    raise Exception(f'Invalid sec_bytes length: {len(sec_bytes)}')
+  secret_block_32bytes = create_matrix(sec_bytes, 4, 8, dtype=object)
+  return secret_block_32bytes
+
 def convert_to_hex_ascii(sec_dec, secintType=secint16):
   sec_bytes = convert_to_sec_bytes(sec_dec, secintType)
 
@@ -80,16 +101,22 @@ def matrix_xor(A, B):
   result = mpc.np_reshape(result, a_shape)
   return result
 
+def mpc_pack(arr):
+    np_arr = np.array(arr)
+    shape = np_arr.shape
+    np_arr = mpc.np_fromlist(np_arr.flatten().tolist())
+    np_arr = mpc.np_reshape(np_arr, shape)
+    return np_arr
+
 @mpc.coroutine
-async def to(x):
-  secint = mpc.SecInt()
+async def to(x, secintType):
   secfld256 = mpc.SecFld(2**8)
   n = len(x)
   await mpc.returnType(secfld256, n)
   
   r = [secrets.randbits(1) for _ in range(n)]
-  r_src = [secint.field(1-2*a) for a in r]
-  r_src = mpc.input([secint(a) for a in r_src])
+  r_src = [secintType.field(1-2*a) for a in r]
+  r_src = mpc.input([secintType(a) for a in r_src])
   r_src = list(map(list, zip(*r_src)))
   r_src = [mpc.prod(a) for a in r_src]
   r_src = [(1-a)/2 for a in r_src]
@@ -103,10 +130,10 @@ async def to(x):
   r_tgt = [a + b for a,b in zip(c, r_tgt)]
   return r_tgt
 
-async def secintToSecfld(a):
+async def secint_to_secfld(a, secintType):
   secfld256 = mpc.SecFld(2**8)
   x = mpc.to_bits(a)
-  x = to(x)
+  x = to(x, secintType)
   b = 0
   for xi in reversed(x[1:]):
     b += xi
