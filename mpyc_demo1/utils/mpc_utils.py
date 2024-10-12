@@ -1,3 +1,4 @@
+import secrets
 from mpyc.runtime import mpc
 
 secint16 = mpc.SecInt(16)
@@ -60,3 +61,37 @@ def convert_to_hex_ascii(sec_dec, secintType=secint16):
     hex_ascii_array.extend([a, b])
 
   return hex_ascii_array
+
+@mpc.coroutine
+async def to(x):
+  secint = mpc.SecInt()
+  secfld256 = mpc.SecFld(2**8)
+  n = len(x)
+  await mpc.returnType(secfld256, n)
+  
+  r = [secrets.randbits(1) for _ in range(n)]
+  r_src = [secint.field(1-2*a) for a in r]
+  r_src = mpc.input([secint(a) for a in r_src])
+  r_src = list(map(list, zip(*r_src)))
+  r_src = [mpc.prod(a) for a in r_src]
+  r_src = [(1-a)/2 for a in r_src]
+  c = mpc.vector_add(x, r_src)
+  c = [mpc.lsb(a) for a in c]
+  c = await mpc.output(c)
+
+  r_tgt = [secfld256.field(a) for a in r]
+  r_tgt = mpc.input([secfld256(a) for a in r_tgt])
+  r_tgt = list(map(sum, zip(*r_tgt)))
+  r_tgt = [a + b for a,b in zip(c, r_tgt)]
+  return r_tgt
+
+async def secintToSecfld(a):
+  secfld256 = mpc.SecFld(2**8)
+  x = mpc.to_bits(a)
+  x = to(x)
+  b = 0
+  for xi in reversed(x[1:]):
+    b += xi
+    b *= secfld256.field(2)
+  b += x[0]
+  return b
