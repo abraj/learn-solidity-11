@@ -1,4 +1,5 @@
 import secrets
+import numpy as np
 from mpyc.runtime import mpc
 
 secint16 = mpc.SecInt(16)
@@ -61,6 +62,23 @@ def convert_to_hex_ascii(sec_dec, secintType=secint16):
     hex_ascii_array.extend([a, b])
 
   return hex_ascii_array
+
+def matrix_xor(A, B):
+  secfld = mpc.SecFld(2**8)
+  a_shape = np.array(A).shape
+  b_shape = np.array(B).shape
+  if a_shape != b_shape:
+    raise Exception(f'Mismatched shape while performing xor: {a_shape}, {b_shape}')
+
+  n, m = a_shape
+  result = np.zeros((n, m), dtype=secfld)
+  for i in range(n):
+    for j in range(m):
+      result[i][j] = A[i][j] ^ B[i][j]
+
+  result = mpc.np_fromlist(sum(result.tolist(), []))
+  result = mpc.np_reshape(result, a_shape)
+  return result
 
 @mpc.coroutine
 async def to(x):
