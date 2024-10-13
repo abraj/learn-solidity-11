@@ -38,6 +38,7 @@ async def xprint2(text, s, hex=False):
 
 async def main():
   await mpc.start()
+  print('Started..')
 
   num_parties = len(mpc.parties)
 
@@ -90,7 +91,7 @@ async def main():
   encryption_key = np.zeros((4, 8), dtype=object)
   for i in range(4):
     for j in range(8):
-      encryption_key[i][j] = await secint_to_secfld(secret_block_32bytes[i][j], secint16)
+      encryption_key[i][j] = await secint_to_secfld(secret_block_32bytes[i][j], secint16, secfld)
   encryption_key = mpc_pack(encryption_key)
 
   # AES-256 encrypt

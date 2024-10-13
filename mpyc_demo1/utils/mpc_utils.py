@@ -5,6 +5,7 @@ from utils.utils import create_matrix, hex_to_bytes
 
 secint = mpc.SecInt(257)
 secint16 = mpc.SecInt(16)
+secfld = mpc.SecFld(2**8)
 
 # NOTE: The returned secure int fits in 'at max' num_bits
 # But, the actual #bits needed to hold the secure int might be 'less than' num_bits
@@ -109,10 +110,9 @@ def mpc_pack(arr):
     return np_arr
 
 @mpc.coroutine
-async def to(x, secintType):
-  secfld256 = mpc.SecFld(2**8)
+async def to(x, secintType, secfldType):
   n = len(x)
-  await mpc.returnType(secfld256, n)
+  await mpc.returnType(secfldType, n)
   
   r = [secrets.randbits(1) for _ in range(n)]
   r_src = [secintType.field(1-2*a) for a in r]
@@ -124,19 +124,18 @@ async def to(x, secintType):
   c = [mpc.lsb(a) for a in c]
   c = await mpc.output(c)
 
-  r_tgt = [secfld256.field(a) for a in r]
-  r_tgt = mpc.input([secfld256(a) for a in r_tgt])
+  r_tgt = [secfldType.field(a) for a in r]
+  r_tgt = mpc.input([secfldType(a) for a in r_tgt])
   r_tgt = list(map(sum, zip(*r_tgt)))
   r_tgt = [a + b for a,b in zip(c, r_tgt)]
   return r_tgt
 
-async def secint_to_secfld(a, secintType):
-  secfld256 = mpc.SecFld(2**8)
+async def secint_to_secfld(a, secintType=secint16, secfldType=secfld):
   x = mpc.to_bits(a)
-  x = to(x, secintType)
+  x = to(x, secintType, secfldType)
   b = 0
   for xi in reversed(x[1:]):
     b += xi
-    b *= secfld256.field(2)
+    b *= secfldType.field(2)
   b += x[0]
   return b
