@@ -3,7 +3,7 @@ import numpy as np
 from mpyc.runtime import mpc
 from mpyc.seclists import seclist
 from secret_sharing.shamir import shamir_split, shamir_reconstruct
-from utils.mpc_utils import get_nbit_rand, convert_to_hex_ascii
+from utils.mpc_utils import get_nbit_rand, convert_to_hex_ascii, secint_to_secfld, mpc_pack
 from hashing.sha3_plus import sha3_256_hash_bits
 
 KEY_SIZE = 32  # 32 bytes (256 bits)
@@ -28,12 +28,20 @@ async def get_hex_commitment(sec_dec):
 
   # Convert hex ASCII array to bits
   bits_array = []
+  # bits_array1 = []
+  # bits_array2 = []
   for b in seclist(hex_ascii_array, secintType):
+    # q = await secint_to_secfld(b, secintType, mpc.SecFld(2**8))
+    # bits_array1.append(q)
     for _ in range(8):  # expand each hex ascii code into a byte (8 bits)
       v = b % 2
       b = b // 2
       bits_array.append(v)
+      # q = await secint_to_secfld(v, secintType, mpc.SecFld(2))
+      # bits_array2.append(q)
   bits_array = mpc.np_fromlist(bits_array)
+  # bits_array1 = mpc_pack(bits_array1)
+  # bits_array2 = mpc_pack(bits_array2)
 
   # NOTE: Does not work!
   # bits_array = [mpc.convert(s, secfld1) for s in bits_array]
@@ -49,6 +57,18 @@ async def get_hex_commitment(sec_dec):
   # TODO: However, try another way w/o revealing the secure value bits
   # bits_array = [mpc.convert(s, secint16) for s in bits_array]
   x = secfld1.array(await mpc.output(bits_array))
+
+  # NOTE: [secure] Works! But, too slow..
+  # x = bits_array2
+  # print(x, len(x))
+  # print(await mpc.output(x))
+
+  # NOTE: [secure] Does not work! Convert `ArraySecFld8(GF(2^8))` --> `ArraySecFld1(GF(2))`
+  # bits_array1 = [mpc.to_bits(byte) for byte in bits_array1]
+  # bits_array1 = np.array(bits_array1).flatten()
+  # x = mpc_pack(bits_array1)
+  # print(x, len(x))
+  # print(await mpc.output(x))
 
   # NOTE: From sha3.py
   # dec_val = await mpc.output(sec_dec)
@@ -123,6 +143,7 @@ async def reconstruct_secret(shares):
 
 async def main():
   await mpc.start()
+  print('Started..')
 
   num_parties = len(mpc.parties)
 
