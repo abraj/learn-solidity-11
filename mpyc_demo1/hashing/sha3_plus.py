@@ -32,7 +32,8 @@ round_constants = tuple(tuple(int(GFpX(2).powmod('x', 7*i + j, 'x^8+x^6+x^5+x^4+
                               for j in range(7))
                         for i in range(24))
 
-secfld = mpc.SecFld(2)
+# secfld = mpc.SecFld(2)
+secfld = mpc.SecFld(2**8)
 
 
 def _keccak_f1600(S):

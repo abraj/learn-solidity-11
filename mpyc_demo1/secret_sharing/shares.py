@@ -9,7 +9,8 @@ from hashing.sha3_plus import sha3_256_hash_bits
 KEY_SIZE = 32  # 32 bytes (256 bits)
 secint = mpc.SecInt(257)
 secint16 = mpc.SecInt(16)
-secfld1 = mpc.SecFld(2)
+# secfld1 = mpc.SecFld(2)
+secfld = mpc.SecFld(2**8)
 
 threshold = 2  # Minimum number of shares required for reconstruction
 n_parties = 3  # Total number of parties
@@ -26,56 +27,23 @@ async def get_hex_commitment(sec_dec):
 
   hex_ascii_array = mpc.np_fromlist(hex_ascii_array)
 
-  # Convert hex ASCII array to bits
-  bits_array = []
-  # bits_array1 = []
-  # bits_array2 = []
+  # Convert hex ASCII array to `ArraySecFld8(GF(2^8))`
+  byte_array = []
   for b in seclist(hex_ascii_array, secintType):
-    # q = await secint_to_secfld(b, secintType, mpc.SecFld(2**8))
-    # bits_array1.append(q)
-    for _ in range(8):  # expand each hex ascii code into a byte (8 bits)
-      v = b % 2
-      b = b // 2
-      bits_array.append(v)
-      # q = await secint_to_secfld(v, secintType, mpc.SecFld(2))
-      # bits_array2.append(q)
-  bits_array = mpc.np_fromlist(bits_array)
-  # bits_array1 = mpc_pack(bits_array1)
-  # bits_array2 = mpc_pack(bits_array2)
+    sec_byte = await secint_to_secfld(b, secintType, mpc.SecFld(2**8))
+    byte_array.append(sec_byte)
 
-  # NOTE: Does not work!
-  # bits_array = [mpc.convert(s, secfld1) for s in bits_array]
-  # x = mpc.np_fromlist(bits_array)
-
-  # NOTE: Does not work!
-  # bits_array = await mpc.gather(bits_array)
-  # # bits_array = bits_array.copy()
-  # bits_array = [mpc.convert(b, secfld1) for b in seclist(bits_array, secintType)]
-  # x = mpc.np_fromlist(bits_array)
-
-  # NOTE: Works!
-  # TODO: However, try another way w/o revealing the secure value bits
-  # bits_array = [mpc.convert(s, secint16) for s in bits_array]
-  x = secfld1.array(await mpc.output(bits_array))
-
-  # NOTE: [secure] Works! But, too slow..
-  # x = bits_array2
-  # print(x, len(x))
-  # print(await mpc.output(x))
-
-  # NOTE: [secure] Does not work! Convert `ArraySecFld8(GF(2^8))` --> `ArraySecFld1(GF(2))`
-  # bits_array1 = [mpc.to_bits(byte) for byte in bits_array1]
-  # bits_array1 = np.array(bits_array1).flatten()
-  # x = mpc_pack(bits_array1)
-  # print(x, len(x))
-  # print(await mpc.output(x))
+  # Extract bits from byte_array
+  bits_array = [mpc.to_bits(byte) for byte in byte_array]
+  bits_array = np.array(bits_array).flatten()
+  x = mpc_pack(bits_array)
 
   # NOTE: From sha3.py
   # dec_val = await mpc.output(sec_dec)
   # inp_str = hex(dec_val)[2:]
   # X = inp_str.encode()  # convert to bytes
   # x = np.array([(b >> i) & 1 for b in X for i in range(8)])  # bytes to bits
-  # x = secfld1.array(x)  # secret-shared input bits
+  # x = secfld.array(x)  # secret-shared input bits
 
   # Compute sha3-256 hash
   hash = await sha3_256_hash_bits(x)
@@ -88,7 +56,8 @@ async def create_shares():
 
   # get hex hash commitments
   commitments = []
-  for share in shares:
+  for i, share in enumerate(shares):
+    print(f'Computing share {i+1} ..')
     hash = await get_hex_commitment(share)
     commitments.append(hash)
 
@@ -107,6 +76,7 @@ async def verify_shares(shares, commitments):
   verified_shares = []
   for i, share in enumerate(shares):
     share_hash = await get_hex_commitment(share)
+    print(f'Verified: share {i+1}')
     share_commitement = int(share_hash, 16)
     if share_commitement == commitments[i]:
       verified_shares.append(shares[i])
