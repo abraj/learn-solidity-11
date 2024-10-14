@@ -21,6 +21,14 @@
 - https://www.youtube.com/watch?v=bSC4rCHbLlc
 - https://pure.tue.nl/ws/portalfiles/portal/333714970/Gils_N.pdf
 
+## MPyC Demo
+
+**Hashing demo**: `python mpyc_demo1/hashing/sha3_plus.py --no-log`  
+**Encryption demo**: `python mpyc_demo1/encryption/np_aes_plus.py --no-log`
+
+**Create secret shares**: `python mpyc_demo1/secret_sharing/shares.py --no-log -M4 -I0/1/2/3`  
+**Encryption using secret shares**: `python mpyc_demo1/encryption/mpyc_encryption.py --no-log -M4 -I0/1/2/3`
+
 ## Online tools
 
 - https://emn178.github.io/online-tools/sha3_256.html
@@ -46,22 +54,22 @@ setup shamir secret: (2/3)
  [ ] a storage party stores the encrypted version of its share in its smart contract
 
 encrypt:
- trusted party gets user input as plaintext
- get plaintext as "secure" input (from trusted party)
- get keys shares from all 3 parties as "hex string" secure input
- pick 2 shares from them at random
- reconstruct the key from the 2 shares
- output: ciphertext
- TODO: return encypted ciphertext w.r.t. trusted party
- ciphertext is stored in smart contract by trusted party (on behalf of user)
+ [*] trusted party gets user input as plaintext
+ [*] get plaintext as "secure" input (from trusted party)
+ [*] get key's shares from all 3 parties as secure input
+ [*] pick 2 shares from them at random
+ [*] reconstruct the key from the 2 shares
+ [*] output: ciphertext
+ [ ] TODO: return encrypted ciphertext w.r.t. trusted party
+ [ ] ciphertext is stored in smart contract by trusted party (on behalf of user)
 
 decrypt:
- trusted party reads ciphertext from smart contract (on behalf of user)
- get ciphertext as "secure" input (from trusted party)
- get keys shares from all 3 parties as "hex string" input
- pick 2 shares from them at random
- reconstruct the key from the 2 shares
- output: plaintext
- TODO: return encypted plaintext w.r.t. trusted party
- trusted party shows the plaintext on user site
+ [*] trusted party reads ciphertext from smart contract (on behalf of user)
+ [*] get ciphertext as "secure" input (from trusted party)
+ [*] get keys shares from all 3 parties as "hex string" input
+ [*] pick 2 shares from them at random
+ [*] reconstruct the key from the 2 shares
+ [*] output: plaintext
+ [ ] TODO: return encrypted plaintext w.r.t. trusted party
+ [ ] trusted party shows the plaintext on user site
 ```
