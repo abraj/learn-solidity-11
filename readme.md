@@ -12,6 +12,11 @@
 - https://www.youtube.com/watch?v=I0bremwQ_ns
 - https://chatgpt.com/c/66fc8557-ac9c-8006-816b-d45a94c7ae07
 
+# TSS & DKG
+
+- https://github.com/ZenGo-X/awesome-tss
+- https://github.com/ZenGo-X/multi-party-ecdsa
+
 ## MPyC
 
 - https://github.com/lschoe/mpyc
