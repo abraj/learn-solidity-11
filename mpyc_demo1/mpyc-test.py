@@ -73,26 +73,32 @@ async def main():
     # print(y)
     # print(await mpc.output(y))  # [3, 6, 9]
 
-    # #10 [Issue: https://github.com/lschoe/mpyc/discussions/100]
-    # a = np.array([secint(1), secint(2), secint(3)])
-    # b = np.array([secint(4), secint(5), secint(6)])
-    # z = mpc.np_concatenate((a, b))
+    # #10 [Ref: https://github.com/lschoe/mpyc/discussions/100]
+    # a = secint.array(np.array([1, 2, 3]))
+    # b = secint.array(np.array([4, 5, 6]))
+    # y = a + b
+    # print(y)
+    # print(y.shape)  # (3,)
+    # print(await mpc.output(y))  # [5 7 9] 
+    # z = np.concatenate((a, b))
     # print(z)
+    # print(z.shape)  # (6,)
+    # print(await mpc.output(z))  # [1 2 3 4 5 6]
 
     # #11
-    # a = [secint(1), secint(2), secint(3)]
-    # b = [secint(4), secint(5), secint(6)]
-    # z = a + b
+    # a = secint.array(np.array([1, 2, 3]))
+    # b = secint.array(np.array([4, 5, 6]))
+    # # z = mpc.np_concatenate((a, b))
+    # z = np.concatenate((a, b))
     # print(z)
-    # z = mpc.np_fromlist(z)
-    # print(z)
-    # print(await mpc.output(z))  # [1, 2, 3, 4, 5, 6]
-    # z = mpc.np_reshape(z, (2, 3))
-    # print(z)
+    # print(await mpc.output(z))  # [1 2 3 4 5 6]
+    # # z = mpc.np_reshape(z, (2, 3))
+    # z = np.reshape(z, (2, 3))
     # print(await mpc.output(z))  # [[1 2 3]
     #                             #  [4 5 6]]
     # # z = mpc.np_transpose(z)
-    # z = z.T
+    # # z = z.T
+    # z = np.transpose(z)
     # print(z)
     # print(await mpc.output(z))  # [[1 4]
     #                             #  [2 5]
